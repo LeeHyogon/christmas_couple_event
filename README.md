@@ -34,4 +34,4 @@
    ./gradlew bootRun
    ## 배포
 
-AWS 배포 예정
+ngrok으로 간단히 로컬에서 돌렸습니다 ㅎㅎ
