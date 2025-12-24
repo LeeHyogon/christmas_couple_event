@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎄 크리스마스를 함께 🎄</title>
+    <link rel="stylesheet" th:href="@{/css/christmas.css}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎄 크리스마스를 함께 🎄</h1>
+        </div>
+        
+        <div class="couple-info" th:if="${couple != null}">
+            <!-- 산타와 커플 사진 - 타이틀과 이름 사이에 위치 -->
+            <div class="santa-photo-container" th:if="${couple.backgroundImageUrl != null}">
+                <div class="santa-figure">
+                    <div class="santa-body">🎅</div>
+                    <div class="santa-arms">
+                        <div class="santa-arm left-arm">👈</div>
+                        <div class="santa-arm right-arm">👉</div>
+                    </div>
+                    <div class="photo-frame">
+                        <img th:src="${couple.backgroundImageUrl}" alt="커플 사진" class="couple-photo">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="couple-names">
+                <span class="name" th:text="${couple.partner1Name}">이름1</span>
+                <span class="heart">💕</span>
+                <span class="name" th:text="${couple.partner2Name}">이름2</span>
+            </div>
+            
+            <div class="anniversary" th:if="${couple.anniversaryDate != null}">
+                <p>만난 지 <span class="days" th:text="${couple.daysTogether}">0</span>일째</p>
+                <p class="date" th:text="${#temporals.format(couple.anniversaryDate, 'yyyy년 MM월 dd일')}">날짜</p>
+            </div>
+            
+            <div class="description" th:if="${couple.description != null and couple.description != ''}">
+                <p th:text="${couple.description}">설명</p>
+            </div>
+            
+            <!-- 액션 버튼들 -->
+            <div class="action-buttons">
+                <button class="view-memories-btn" onclick="scrollToMemories()">💝 우리의 추억 보기</button>
+                <button class="view-messages-btn" onclick="scrollToMessages()">💌 메시지 보기</button>
+                <button class="view-photos-btn" onclick="scrollToPhotos()">📸 사진 갤러리 보기</button>
+            </div>
+            
+            <!-- 삭제 버튼 -->
+            <div class="couple-actions">
+                <button class="delete-couple-btn" onclick="deleteCouple()" th:data-id="${couple.id}">🗑️ 커플 정보 삭제</button>
+            </div>
+        </div>
+        
+        <div class="no-couple" th:if="${couple == null}">
+            <p>커플 정보가 없습니다.</p>
+            <div class="couple-form">
+                <h2>커플 정보 입력</h2>
+                <form id="coupleForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>첫 번째 이름 (남자)</label>
+                        <input type="text" id="partner1Name" value="이효곤" required>
+                    </div>
+                    <div class="form-group">
+                        <label>두 번째 이름 (여자)</label>
+                        <input type="text" id="partner2Name" value="오주희" required>
+                    </div>
+                    <div class="form-group">
+                        <label>만난 날짜</label>
+                        <input type="date" id="anniversaryDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>설명 (선택사항)</label>
+                        <textarea id="description" rows="3" placeholder="우리의 이야기를 적어주세요..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>커플 사진 (선택사항)</label>
+                        <input type="file" id="couplePhoto" accept="image/*" onchange="previewPhoto(this)">
+                        <small>산타가 들고 있는 모양으로 표시됩니다 🎅</small>
+                        <div id="photoPreview" class="photo-preview" style="display: none;">
+                            <img id="previewImage" src="" alt="미리보기">
+                        </div>
+                    </div>
+                    <button type="submit" class="submit-btn">저장하기 💕</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 사진 갤러리 섹션 -->
+        <div class="photos-section" id="photosSection">
+            <div class="section-header">
+                <h2>📸 사진 갤러리</h2>
+                <button class="add-photo-btn" onclick="openPhotoForm()">+ 사진 추가</button>
+            </div>
+            
+            <div id="photosList" class="photos-list">
+                <div class="loading" id="photosLoading" style="display: none;">
+                    <p>사진을 불러오는 중... 📸</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메시지 섹션 -->
+        <div class="messages-section" id="messagesSection">
+            <div class="section-header">
+                <h2>💌 크리스마스 메시지</h2>
+                <button class="add-message-btn" onclick="openMessageForm()">+ 메시지 작성</button>
+            </div>
+            
+            <div id="messagesList" class="messages-list">
+                <div class="loading" id="messagesLoading" style="display: none;">
+                    <p>메시지를 불러오는 중... 💕</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 추억 섹션 -->
+        <div class="memories-section" id="memoriesSection">
+            <div class="section-header">
+                <h2>💝 우리의 추억</h2>
+                <button class="add-memory-btn" onclick="openMemoryForm()">+ 추억 추가</button>
+            </div>
+            
+            <div id="memoriesList" class="memories-list">
+                <div class="loading" id="memoriesLoading" style="display: none;">
+                    <p>추억을 불러오는 중... 💕</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 메시지 작성/수정 모달 -->
+        <div id="messageModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeMessageForm()">&times;</span>
+                <h2 id="messageModalTitle">새 메시지 작성</h2>
+                <form id="messageForm">
+                    <input type="hidden" id="messageId">
+                    <div class="form-group">
+                        <label>제목 *</label>
+                        <input type="text" id="messageTitle" required placeholder="메시지 제목을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label>작성자 *</label>
+                        <input type="text" id="messageAuthor" required placeholder="이름을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label>내용 *</label>
+                        <textarea id="messageContent" rows="8" required placeholder="마음을 전하는 메시지를 작성해주세요..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="messageIsPublic" checked>
+                            공개 메시지 (다른 사람도 볼 수 있습니다)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>비밀번호 (선택사항)</label>
+                        <input type="password" id="messagePassword" placeholder="수정/삭제 시 사용할 비밀번호">
+                        <small>비밀번호를 설정하면 나중에 메시지를 수정하거나 삭제할 수 있습니다.</small>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="submit-btn">전송하기 💌</button>
+                        <button type="button" class="cancel-btn" onclick="closeMessageForm()">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 메시지 수정/삭제 비밀번호 모달 -->
+        <div id="messagePasswordModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closePasswordModal()">&times;</span>
+                <h2>비밀번호 입력</h2>
+                <form id="passwordForm">
+                    <div class="form-group">
+                        <label>비밀번호 *</label>
+                        <input type="password" id="passwordInput" required placeholder="메시지 작성 시 설정한 비밀번호">
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="submit-btn">확인</button>
+                        <button type="button" class="cancel-btn" onclick="closePasswordModal()">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- 추억 작성/수정 모달 -->
+        <div id="memoryModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeMemoryForm()">&times;</span>
+                <h2 id="modalTitle">새 추억 작성</h2>
+                <form id="memoryForm">
+                    <input type="hidden" id="memoryId">
+                    <div class="form-group">
+                        <label>제목 *</label>
+                        <input type="text" id="memoryTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>날짜 *</label>
+                        <input type="date" id="memoryDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>장소</label>
+                        <input type="text" id="memoryLocation" placeholder="예: 서울, 부산 등">
+                    </div>
+                    <div class="form-group">
+                        <label>내용</label>
+                        <textarea id="memoryContent" rows="5" placeholder="그 날의 추억을 적어주세요..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>표시 순서</label>
+                        <input type="number" id="memoryDisplayOrder" value="0" min="0">
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="submit-btn">저장하기</button>
+                        <button type="button" class="cancel-btn" onclick="closeMemoryForm()">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 사진 업로드 모달 -->
+        <div id="photoModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closePhotoForm()">&times;</span>
+                <h2>새 사진 추가</h2>
+                <form id="photoForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>사진 선택 *</label>
+                        <input type="file" id="photoFile" accept="image/*" required onchange="previewPhotoUpload(this)">
+                        <small>JPG, PNG 등 이미지 파일만 업로드 가능합니다.</small>
+                        <div id="photoUploadPreview" class="photo-preview" style="display: none;">
+                            <img id="photoUploadImage" src="" alt="미리보기">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>설명</label>
+                        <textarea id="photoDescription" rows="3" placeholder="사진에 대한 설명을 입력하세요..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>표시 순서</label>
+                        <input type="number" id="photoDisplayOrder" value="0" min="0">
+                        <small>숫자가 작을수록 앞에 표시됩니다.</small>
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="submit-btn">업로드하기 📸</button>
+                        <button type="button" class="cancel-btn" onclick="closePhotoForm()">취소</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script th:src="@{/js/christmas.js}"></script>
+</body>
+</html>
